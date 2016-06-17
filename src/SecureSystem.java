@@ -14,6 +14,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /*
 * Constant security levels
@@ -36,9 +37,6 @@ public class SecureSystem{
 		
 		sm.createSubject("lyle", Level.LOW);
 		sm.createSubject("hal", Level.HIGH);
-		
-		rm.om.createObject("lobj", 0, Level.LOW);
-		rm.om.createObject("hobj", 0, Level.HIGH);
 		
 		read(args);
 		
@@ -66,7 +64,10 @@ public class SecureSystem{
 				System.out.println("No instructionlist file provided, program will exit");
 				System.exit(1);
 			}
-			new Reader(args[0]).read();
+			if(args.length > 1)
+				Reader.read(args[0], args[1]);
+			else
+				Reader.read(args[0], null);
 		}
 		catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -171,8 +172,14 @@ class ReferenceMonitor{
 		if (ins != null && ins.valid){
 			if (ins.op.equals("reads"))
 				executeRead(ins);
-			if (ins.op.equals("writes"))
+			else if (ins.op.equals("writes"))
 				executeWrite(ins);
+			else if (ins.op.equals("runs"))
+				executeRun(ins);
+			else if (ins.op.equals("creates"))
+				executeRun(ins);
+			else if (ins.op.equals("destroys"))
+				executeRun(ins);
 		}
 		SecureSystem.getSys().printState();
 	}
@@ -207,6 +214,19 @@ class ReferenceMonitor{
 					return false;
 			list.add(new Object(name, value, level));
 			return true;
+		}
+		boolean destroyObject(String name){
+			if(!objectExists(name))
+					return false;
+			Iterator<Object> it = list.iterator();
+			while (it.hasNext()) {
+			  Object object = it.next();
+			  if (object.name.equals(name)) {
+			    it.remove();
+			    return true;
+			  }
+			}
+			return false;
 		}
 
 		/* method will check if an Object exists or not 	*/
@@ -268,8 +288,24 @@ class ReferenceMonitor{
 			SecureSystem.rm.om.setValue(ins.obj, ins.value);
 		}
 	}
+	static void executeRun(InstructionObject ins){
+		
+	}
+	static void executeCreate(InstructionObject ins){
+		Level subLevel = SecureSystem.sm.subjectLevel(ins.sub);
+		Level objLevel = SecureSystem.rm.om.objectLevel(ins.obj);
+		if(!SecurityLevel.dominates(subLevel, objLevel) || subLevel == objLevel){
+			SecureSystem.rm.om.createObject(ins.obj, 0, SecureSystem.getSys().sm.subjectLevel(ins.sub));
+		}
+	}
+	static void executeDestroy(InstructionObject ins){
+		Level subLevel = SecureSystem.sm.subjectLevel(ins.sub);
+		Level objLevel = SecureSystem.rm.om.objectLevel(ins.obj);
+		if(!SecurityLevel.dominates(subLevel, objLevel) || subLevel == objLevel){
+			SecureSystem.rm.om.destroyObject(ins.obj);
+		}
+	}
 }
-
 /*
 * Class will represent Instructions
 */
@@ -298,25 +334,25 @@ class InstructionObject{
 	InstructionObject isValid(){
 		String[] tokens = line.split("\\s+");
 		
+		if(tokens.length < 2){
+			return new BadInstruction();
+		}
+		else if (! SecureSystem.getSys().sm.subjectExists(tokens[1])){		//subject doesn't exist
+				return new BadInstruction();
+		}
+		sub = tokens[1].toLowerCase();
 		if (tokens[0].equalsIgnoreCase("READ") && tokens.length == 3){
 			
-			if(! SecureSystem.getSys().sm.subjectExists(tokens[1])){
-				return new BadInstruction();
-			}
 			if(! SecureSystem.getSys().rm.om.objectExists(tokens[2])){
 				return new BadInstruction();
 			}
 			op = "reads";
-			sub = tokens[1].toLowerCase();
 			obj = tokens[2].toLowerCase();
 			
 			return this;
 		}
 		else if (tokens[0].equalsIgnoreCase("WRITE") && tokens.length == 4){
 			
-			if(! SecureSystem.getSys().sm.subjectExists(tokens[1])){
-				return new BadInstruction();
-			}
 			if(! SecureSystem.getSys().rm.om.objectExists(tokens[2])){
 				return new BadInstruction();
 			}
@@ -327,12 +363,37 @@ class InstructionObject{
 				return new BadInstruction();
 			}
 			op = "writes";
-			sub = tokens[1].toLowerCase();
 			obj = tokens[2].toLowerCase();
 			
 			return this;
 		}
-		return new BadInstruction();
+		else if (tokens[0].equalsIgnoreCase("CREATE") && tokens.length == 3){
+		
+			if( SecureSystem.getSys().rm.om.objectExists(tokens[2])){		//object musn't exist
+				return new BadInstruction();
+			}
+			op = "creates";
+			obj = tokens[2].toLowerCase();
+			
+			return this;
+		}
+		else if (tokens[0].equalsIgnoreCase("DESTROY") && tokens.length == 3){
+			
+			if(! SecureSystem.getSys().rm.om.objectExists(tokens[2])){
+				return new BadInstruction();
+			}
+			op = "destorys";
+			obj = tokens[2].toLowerCase();
+			return this;
+		}
+		else if (tokens[0].equalsIgnoreCase("RUN") && tokens.length == 2){
+			
+			sub = "runs";
+			return this;
+		}
+		else{
+			return new BadInstruction();
+		}
 	}
 	/*
 	 * Class BadInstruction is invoked when there is a bad instruction
@@ -350,22 +411,52 @@ class InstructionObject{
 	}
 }
 
+class CovertChannel{
+	CovertChannel(){
+		
+	}
+	
+	boolean execute(boolean bit){
+		if (! bit) {
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("RUN HAL").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("CREATE HAL OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("CREATE LYLE OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("WRITE LYLE OBJ 1").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("READ LYLE OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("DESTROY LYLE OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("RUN LYLE").isValid());
+		} 
+		else {
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("CREATE LYLE OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("WRITE LYLE OBJ 1").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("READ LYLE OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("DESTROY LYLE OBJ").isValid());
+	    	 ReferenceMonitor.runInstruction(new InstructionObject("RUN LYLE").isValid());
+		}
+		return false;
+	}
+}
+
 /*
 * Reader is a class that is responsible of reading the instructionlist file
 */
-class Reader { 
-	String path;
-	
-	Reader(String path){
-		this.path = path;
-	}
-	
+class Reader {
+	static boolean v = false;
 	/*	read method will read the file	*/
-	void read () throws FileNotFoundException{
-		File input = new File(path);
+	static void read (String arg0, String arg1) throws FileNotFoundException{
+		
+		File input = null;
+		if(arg0.equals("v")){
+			input = new File(arg1);
+			v = true;
+		}
+		else{
+			input = new File(arg1);
+			v = false;
+		}
 		
 		if(!input.exists() || input.isDirectory()) { 
-			throw new FileNotFoundException("File not found at path: " + path);
+			throw new FileNotFoundException("File not found at path: " + input.getPath());
 		}
 		
 	    BufferedReader br = null;
