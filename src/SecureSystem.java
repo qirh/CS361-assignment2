@@ -64,10 +64,13 @@ public class SecureSystem{
 				System.out.println("No instructionlist file provided, program will exit");
 				System.exit(1);
 			}
-			if(args.length > 1)
-				Reader.read(args[0], args[1]);
-			else
-				Reader.read(args[0], null);
+			if(args.length > 1){
+				if(args[0].equalsIgnoreCase("v"))
+					ReaderWriter.read("v", args[1]);
+				
+				else
+					ReaderWriter.read(null, args[0]);
+			}
 		}
 		catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -144,14 +147,6 @@ class SubjectManager{
 				return x.level;
 		return null;
 	}
-	/*	method will return a subject 	
-	Subject getSubject(String name){
-		for (Subject x: list)
-			if(x.name.equalsIgnoreCase(name))
-				return x;
-		return null;
-	}
-	*/
 	/*	method will set the temp value of a Subject 	*/
 	void setTemp(String name, int temp){
 		for (Subject x: list)
@@ -288,9 +283,13 @@ class ReferenceMonitor{
 			SecureSystem.rm.om.setValue(ins.obj, ins.value);
 		}
 	}
+	
+	/*	method will execute a run instruction	*/
 	static void executeRun(InstructionObject ins){
 		
 	}
+	
+	/*	method will execute a create instruction	*/
 	static void executeCreate(InstructionObject ins){
 		Level subLevel = SecureSystem.sm.subjectLevel(ins.sub);
 		Level objLevel = SecureSystem.rm.om.objectLevel(ins.obj);
@@ -298,6 +297,8 @@ class ReferenceMonitor{
 			SecureSystem.rm.om.createObject(ins.obj, 0, SecureSystem.getSys().sm.subjectLevel(ins.sub));
 		}
 	}
+	
+	/*	method will execute a destroy instruction	*/
 	static void executeDestroy(InstructionObject ins){
 		Level subLevel = SecureSystem.sm.subjectLevel(ins.sub);
 		Level objLevel = SecureSystem.rm.om.objectLevel(ins.obj);
@@ -310,6 +311,7 @@ class ReferenceMonitor{
 * Class will represent Instructions
 */
 class InstructionObject{
+	
 	String line;
 	String op;
 	String sub;
@@ -438,20 +440,22 @@ class CovertChannel{
 }
 
 /*
-* Reader is a class that is responsible of reading the instructionlist file
+* Reader is a class that is responsible of reading the inputfile file
 */
-class Reader {
+class ReaderWriter {
+	static String path = "";
 	static boolean v = false;
+	
 	/*	read method will read the file	*/
 	static void read (String arg0, String arg1) throws FileNotFoundException{
 		
-		File input = null;
+		path = arg1;
+		File input = new File(arg1);
+		
 		if(arg0.equals("v")){
-			input = new File(arg1);
 			v = true;
 		}
 		else{
-			input = new File(arg1);
 			v = false;
 		}
 		
