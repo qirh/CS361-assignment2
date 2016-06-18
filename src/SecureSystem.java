@@ -1,12 +1,12 @@
 
 /*
-*
-* Saleh Alghusson
-* Ovais Panjwani
-* CS f361 assignment 2
-* https://www.cs.utexas.edu/~byoung/cs361/assignment2-zhao.html
-*
-*/
+ *
+ * Saleh Alghusson
+ * Ovais Panjwani
+ * CS f361 assignment 2
+ * https://www.cs.utexas.edu/~byoung/cs361/assignment2-zhao.html
+ *
+ */
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -21,32 +21,31 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 /*
-* Constant security levels
-*/
+ * Constant security levels
+ */
 enum Level {
    HIGH, LOW 
 }
 
 /*
-*	Class SecureSystem is the driver class of the program
-*/
+ *	Class SecureSystem is the driver class of the program
+ */
 public class SecureSystem{
 	
 	private static SecureSystem instance = null;
 	public static SubjectManager sm = new SubjectManager();
 	public static ReferenceMonitor rm = new ReferenceMonitor();
 	
-	public static void main(String[] args) {
-		
-		
+	/*	main function	*/
+	public static void main(String[] args) {	
 		
 		sm.createSubject("lyle", Level.LOW);
 		sm.createSubject("hal", Level.HIGH);
 		read(args);
 
 		System.out.println("End");
-		
 	}
+	
 	/* 	will print the state of the program	*/
 	void printState(){
 		System.out.print(rm.om.printObjects());
@@ -90,8 +89,8 @@ public class SecureSystem{
 }
 
 /*
-* Class is responsible to evaluate the dominates function 	
-*/
+ * Class is responsible to evaluate the dominates function 	
+ */
 class SecurityLevel{
 	/*	method will return a boolean representing the dominates relation	*/
 	static boolean dominates(Level x, Level y){
@@ -103,8 +102,8 @@ class SecurityLevel{
 }
 
 /*
-* Class will manage Subjects
-*/
+ * Class SubjectManager will manage Subjects
+ */
 class SubjectManager{
 	private static ArrayList<Subject> list = new ArrayList<Subject>();
 	
@@ -172,8 +171,8 @@ class SubjectManager{
 }
 
 /*
-* Class will be responsible for running instructions and has the ObjectManager inside of it
-*/
+ * Class will be responsible for running instructions and has the ObjectManager inside of it
+ */
 class ReferenceMonitor{
 	static ObjectManager om = new ObjectManager();
 	static private int counter = 8;
@@ -232,6 +231,7 @@ class ReferenceMonitor{
 			list.add(new Object(name, value, level));
 			return true;
 		}
+		/* method will destroy Objects 	*/
 		boolean destroyObject(String name){
 			if(!objectExists(name))
 					return false;
