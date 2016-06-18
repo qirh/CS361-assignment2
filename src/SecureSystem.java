@@ -3,17 +3,21 @@
 *
 * Saleh Alghusson
 * Ovais Panjwani
-* CS f361 assignment 1
-* assignment1 details: https://www.cs.utexas.edu/~byoung/cs361/assignment1-nonthreaded-zhao.html
+* CS f361 assignment 2
+* https://www.cs.utexas.edu/~byoung/cs361/assignment2-zhao.html
 *
 */
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 /*
@@ -35,10 +39,12 @@ public class SecureSystem{
 	public static void main(String[] args) {
 		
 		
+		
 		sm.createSubject("lyle", Level.LOW);
 		sm.createSubject("hal", Level.HIGH);
-		
 		read(args);
+
+		System.out.println("End");
 		
 	}
 	/* 	will print the state of the program	*/
@@ -61,13 +67,12 @@ public class SecureSystem{
 	static void read(String[] args){
 		try {
 			if (args.length < 1){
-				System.out.println("No instructionlist file provided, program will exit");
+				System.out.println("No input file provided, program will exit");
 				System.exit(1);
 			}
-			if(args.length > 1){
+			if(args.length >= 1){
 				if(args[0].equalsIgnoreCase("v"))
 					ReaderWriter.read("v", args[1]);
-				
 				else
 					ReaderWriter.read(null, args[0]);
 			}
@@ -118,6 +123,10 @@ class SubjectManager{
 		void setTemp(int temp){
 			this.temp = temp;
 		}
+		/* method will set the temp value of a Subject 	*/
+		int getTemp(){
+			return temp;
+		}
 	}
 	/*	method to create a Subject 	*/
 	boolean createSubject(String name, Level level){
@@ -152,7 +161,14 @@ class SubjectManager{
 		for (Subject x: list)
 			if(x.name.equalsIgnoreCase(name))
 				x.setTemp(temp);
-	}		
+	}
+	/*	method will get the temp value of a Subject 	*/
+	Integer getTemp(String name){
+		for (Subject x: list)
+			if(x.name.equalsIgnoreCase(name))
+				return x.getTemp();
+		return null;
+	}
 }
 
 /*
@@ -160,11 +176,14 @@ class SubjectManager{
 */
 class ReferenceMonitor{
 	static ObjectManager om = new ObjectManager();
+	static private int counter = 8;
+	static private byte temp_byte = 0;
 	
 	/*	method will run instructions 	*/
-	static void runInstruction(InstructionObject ins){
-		System.out.println(ins);
+	static void runInstruction(InstructionObject ins) throws Exception{
+		
 		if (ins != null && ins.valid){
+			ReaderWriter.log(ins);
 			if (ins.op.equals("reads"))
 				executeRead(ins);
 			else if (ins.op.equals("writes"))
@@ -172,11 +191,10 @@ class ReferenceMonitor{
 			else if (ins.op.equals("runs"))
 				executeRun(ins);
 			else if (ins.op.equals("creates"))
-				executeRun(ins);
+				executeCreate(ins);
 			else if (ins.op.equals("destroys"))
-				executeRun(ins);
+				executeDestroy(ins);
 		}
-		SecureSystem.getSys().printState();
 	}
 	
 	/*
@@ -201,6 +219,10 @@ class ReferenceMonitor{
 			/*	method will set an object's value 	*/
 			void setValue(int x){
 				this.value = x;
+			}
+			/*	method will return an object's value 	*/
+			int getValue(){
+				return value;
 			}
 		}
 		/* method will create Objects 	*/
@@ -261,7 +283,14 @@ class ReferenceMonitor{
 			for (Object x: list)
 				if(x.name.equalsIgnoreCase(name))
 					x.setValue(value);
-		}	
+		}
+		/*	method will return an Object's value	*/
+		Integer getValue(String name){
+			for (Object x: list)
+				if(x.name.equalsIgnoreCase(name))
+					return x.getValue();
+			return null;
+		}
 	}
 	
 	/*	method will execute a read instruction	*/
@@ -285,17 +314,21 @@ class ReferenceMonitor{
 	}
 	
 	/*	method will execute a run instruction	*/
-	static void executeRun(InstructionObject ins){
+	static void executeRun(InstructionObject ins)throws Exception{
+		counter--;
+		int val = SecureSystem.sm.getTemp(ins.sub);
 		
+		temp_byte = (byte) ( (temp_byte << 1) | val);
+		
+		if (counter == 0) {
+			counter = 8;
+			ReaderWriter.write(temp_byte);
+		}
 	}
 	
 	/*	method will execute a create instruction	*/
 	static void executeCreate(InstructionObject ins){
-		Level subLevel = SecureSystem.sm.subjectLevel(ins.sub);
-		Level objLevel = SecureSystem.rm.om.objectLevel(ins.obj);
-		if(!SecurityLevel.dominates(subLevel, objLevel) || subLevel == objLevel){
-			SecureSystem.rm.om.createObject(ins.obj, 0, SecureSystem.getSys().sm.subjectLevel(ins.sub));
-		}
+		SecureSystem.rm.om.createObject(ins.obj, 0, SecureSystem.getSys().sm.subjectLevel(ins.sub));
 	}
 	
 	/*	method will execute a destroy instruction	*/
@@ -327,10 +360,18 @@ class InstructionObject{
 	}
 	/*	toString method for printing */
 	public String toString() {
-		if (op.equalsIgnoreCase("reads"))
-			return(sub + " " + op + " " + obj);
-		else
+		if(op == null)
+			return "NULL";
+		else if(op.equalsIgnoreCase("reads"))
+			return(sub + " " + op + " " + obj + " with value " + SecureSystem.getSys().rm.om.getValue(obj));
+		else if(op.equalsIgnoreCase("writes"))
 			return sub + " " + op + " value " + value + " to " + obj;
+		else if(op.equalsIgnoreCase("creates"))
+			return sub + " " + op + " object: " + obj + " with default value: " + value;
+		else if(op.equalsIgnoreCase("runs"))
+			return sub + " ran";
+		else
+			return sub + " destroys object: " + obj + ", val = " +SecureSystem.sm.getTemp(sub);
    }
 	/*	method will decide if an instruction is valid or not	*/
 	InstructionObject isValid(){
@@ -340,7 +381,7 @@ class InstructionObject{
 			return new BadInstruction();
 		}
 		else if (! SecureSystem.getSys().sm.subjectExists(tokens[1])){		//subject doesn't exist
-				return new BadInstruction();
+			return new BadInstruction();
 		}
 		sub = tokens[1].toLowerCase();
 		if (tokens[0].equalsIgnoreCase("READ") && tokens.length == 3){
@@ -370,7 +411,6 @@ class InstructionObject{
 			return this;
 		}
 		else if (tokens[0].equalsIgnoreCase("CREATE") && tokens.length == 3){
-		
 			if( SecureSystem.getSys().rm.om.objectExists(tokens[2])){		//object musn't exist
 				return new BadInstruction();
 			}
@@ -384,13 +424,12 @@ class InstructionObject{
 			if(! SecureSystem.getSys().rm.om.objectExists(tokens[2])){
 				return new BadInstruction();
 			}
-			op = "destorys";
+			op = "destroys";
 			obj = tokens[2].toLowerCase();
 			return this;
 		}
 		else if (tokens[0].equalsIgnoreCase("RUN") && tokens.length == 2){
-			
-			sub = "runs";
+			op = "runs";
 			return this;
 		}
 		else{
@@ -414,28 +453,41 @@ class InstructionObject{
 }
 
 class CovertChannel{
+	
+	
 	CovertChannel(){
 		
 	}
+	static void executeHelper(byte[] bytearray){
+		for(byte by: bytearray)
+			for (int i = 7; i >-1; i--)
+				execute( ((by >> i) & 1) != 0 );
+	}
 	
-	boolean execute(boolean bit){
-		if (! bit) {
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("RUN HAL").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("CREATE HAL OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("CREATE LYLE OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("WRITE LYLE OBJ 1").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("READ LYLE OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("DESTROY LYLE OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("RUN LYLE").isValid());
-		} 
-		else {
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("CREATE LYLE OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("WRITE LYLE OBJ 1").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("READ LYLE OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("DESTROY LYLE OBJ").isValid());
-	    	 ReferenceMonitor.runInstruction(new InstructionObject("RUN LYLE").isValid());
+	static void execute(boolean bit){
+		try{
+			if (! bit) {
+				
+		    	ReferenceMonitor.runInstruction(new InstructionObject("CREATE HAL OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("CREATE LYLE OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("WRITE LYLE OBJ 1").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("READ LYLE OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("DESTROY LYLE OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("RUN LYLE").isValid());   	 
+			} 
+			else{
+				
+		    	ReferenceMonitor.runInstruction(new InstructionObject("CREATE LYLE OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("WRITE LYLE OBJ 1").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("READ LYLE OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("DESTROY LYLE OBJ").isValid());
+		    	ReferenceMonitor.runInstruction(new InstructionObject("RUN LYLE").isValid()); 
+			}
 		}
-		return false;
+		catch(Exception e){
+			e.printStackTrace();
+			return;
+		}
 	}
 }
 
@@ -443,20 +495,20 @@ class CovertChannel{
 * Reader is a class that is responsible of reading the inputfile file
 */
 class ReaderWriter {
-	static String path = "";
-	static boolean v = false;
+	static private String path = "";
+	static private boolean verbose = false;
 	
 	/*	read method will read the file	*/
-	static void read (String arg0, String arg1) throws FileNotFoundException{
+	static void read (String arg0, String arg1) throws Exception{
 		
 		path = arg1;
 		File input = new File(arg1);
 		
-		if(arg0.equals("v")){
-			v = true;
+		if(arg0 != null && arg0.equals("v")){
+			verbose = true;
 		}
 		else{
-			v = false;
+			verbose = false;
 		}
 		
 		if(!input.exists() || input.isDirectory()) { 
@@ -464,13 +516,15 @@ class ReaderWriter {
 		}
 		
 	    BufferedReader br = null;
-
 	    try {
-	    	String line;
-		     br = new BufferedReader(new FileReader(input));
-		     while ((line = br.readLine()) != null) {
-		    	 ReferenceMonitor.runInstruction(new InstructionObject(line).isValid());
-		     }
+	    	clear();
+	    	String line = "";
+		    br = new BufferedReader(new FileReader(input));
+		    /*	feed the input file to the cover channel line by line	*/
+		    while((line = br.readLine())!=null){
+		    	CovertChannel.executeHelper(line.getBytes());
+		    	write( (byte) 0xD);
+		    }
 	    } 
 		catch (IOException e) {
 			e.printStackTrace();
@@ -484,5 +538,33 @@ class ReaderWriter {
 				ex.printStackTrace();
 		    }
 		}
+	}
+	
+	/*	clear method will clear the output files before program execution	*/
+	static void clear() throws IOException{
+		FileOutputStream out = new FileOutputStream(path + ".out", false);
+    	out.close();
+    	out = new FileOutputStream(path.substring(0, path.lastIndexOf("/")) + "/log", false);
+    	out.close();
+
+	}
+	
+	/*	write method will write to the file	*/
+	static void write (byte temp_byte) throws Exception{
+		FileOutputStream out = new FileOutputStream(path + ".out", true);
+		out.write(temp_byte);
+		out.close();
+	}
+	
+	/*	log method will log the commands to the file	*/
+	static void log(InstructionObject ins) throws IOException{
+		if(!verbose)
+			return;
+		
+		File fout = new File(path.substring(0, path.lastIndexOf("/")) + "/log");
+		FileOutputStream fos = new FileOutputStream(fout, true);
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+		bw.write(ins.toString()+"\n");
+		bw.close();
 	}
 }
