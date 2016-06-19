@@ -1,0 +1,1 @@
+Note that line endings are represented differently in different systems. Early teletype printers used the CR and LF control characters, respectively, to move the print head left and then scroll down one line. But line termination is treated differently by different modern operating system: Macintosh uses a CR (ASCII 13);
