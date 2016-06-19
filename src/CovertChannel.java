@@ -545,7 +545,10 @@ class ReaderWriter {
 	static void clear() throws IOException{
 		FileOutputStream out = new FileOutputStream(path + ".out", false);
     	out.close();
-    	out = new FileOutputStream(path.substring(0, path.lastIndexOf("/")) + "/log", false);
+    	if(path.contains("/"))
+    		out = new FileOutputStream(path.substring(0, path.lastIndexOf("/")) + "/log", false);
+    	else
+    		out = new FileOutputStream("log", false);
     	out.close();
 	}
 	
@@ -560,7 +563,12 @@ class ReaderWriter {
 	static void log(InstructionObject ins) throws IOException{
 		if(!verbose)
 			return;
-		File fout = new File(path.substring(0, path.lastIndexOf("/")) + "/log");
+		File fout;
+		if(path.contains("/"))
+    		fout = new File(path.substring(0, path.lastIndexOf("/")) + "/log");
+    	else
+    		fout = new File("log");
+		
 		FileOutputStream fos = new FileOutputStream(fout, true);
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
 		bw.write(ins.toString()+"\n");

@@ -15,7 +15,7 @@ Windows 10, MSI GT80s, Core i7-6820HK, 3.7 GHZ
 The first two test files are novels the were acquired from the internet. Res are 'Pride and Prejudice' and 'Metamorphosis' respectively. The third one which is called Test3 is a paragraph from the project requirement document, the fourth one is an excerpt from the chronicle about a collective in non-profit East Austin.
 
 [Finish]
-We finished all Requirements, with no known bugs
+We finished all Requirements. There might be a bug (based on the system you're running this on) for file inputs. we think we fixed it, but if there is a FileNotFoundException or a StringIndexOutOfBoundsException. That means the program messed up and put an extra slash, please provide the input file by providing the full path to it, not just the file's name
 
 [Results Summary]
 [No.]	[DocumentName] 		[Size] 	 	[Bandwidth]
