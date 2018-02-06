@@ -1,12 +1,13 @@
-## CS361 Foundations of Security. Assignment 2 (Password Cracking) [![MIT license](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://https://raw.githubusercontent.com/qirh/CS361-assignment3/master/LICENSE)
+## CS361 Foundations of Security. Assignment 2 (Password Cracking) [![MIT license](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://https://raw.githubusercontent.com/qirh/CS361-assignment2/master/LICENSE)
 
 ### Description
-Java project by me and [@Ovais](https://github.com/theBrovais). Done for CS f361, taught by the amazing Dr. Bill Young in the summer of 2016. For assignment details, please look [here](https://github.com/qirh/CS361-assignment3/blob/master/assignment3.pdf)
+Java project by me and [@Ovais](https://github.com/theBrovais). Done for CS f361, taught by the amazing Dr. Bill Young in the summer of 2016. For assignment details, please look [here](https://github.com/qirh/CS361-assignment2/blob/master/assignment2.pdf)
 
 There is only one java file named *CovertChannel.java*, this file has both the run harness and the rest of the code. A BLP Secure System was implemented in this project, building off the last project. With the addition of a Covert channel this time. The covert channel functionality is implemented in the methods *execute()* and it's helper method, conveniently named *executeHelper()*, both residing in the CovertChannel class.
 
 To compile the program
-```javac CoverChannel.java
+```
+javac CoverChannel.java
 ```
 The program will not run however without an input file. The program will also take an optional flag 'v' for verbose to be supplied before the input file. If supplied, the program will output all the covert channel commands to a file named log in the same directory as the code.
 
